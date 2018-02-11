@@ -1,8 +1,8 @@
 from os.path import join
 from torch.autograd import Variable
 import torch
+from numpy import pi, arctan2, where, minimum, nan_to_num
 from pandas import DataFrame
-from numpy import pi, arctan2, where
 
 def train(trainloader, net, criterion, optimizer, epoch, display):
     net.train()
@@ -118,3 +118,22 @@ def run(loader, net, output):
 
         DataFrame(df).to_csv(join(output,'predict_%05d.csv' % ind))
         ind +=1
+
+def summarize(input_dir, prediction_dir):
+    input_files = sorted(glob(join(input_dir, '*.csv')))
+    prediction_files = sorted(glob(join(prediction_dir, 'predict_*.csv')))
+
+    results = DataFrame([])
+    for idx in range(len(input_files)):
+        inputs = read_csv(input_files[idx])
+        predictions = read_csv(prediction_files[idx])
+        inputs.chi = nan_to_num(inputs.chi)
+        results = results.append({'chi': MAE(inputs.chi, predictions.chi),
+                                  'phi': MAE(inputs.phi, predictions.phi),
+                                  'psi': MAE(inputs.psi, predictions.psi)}, ignore_index=True)
+    results.to_csv(join(prediction_dir, 'results.csv'))
+    return results
+
+
+def MAE(x, y):
+    return sum(minimum(abs(y - x), 360 - abs(y - x))) / len(x)

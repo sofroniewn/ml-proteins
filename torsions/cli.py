@@ -3,6 +3,7 @@ import click
 settings = dict(help_option_names=['-h', '--help'])
 from torsions.commands.train import train_command
 from torsions.commands.eval import evaluate_command
+from torsions.commands.summarize import summarize_command
 
 @click.group(options_metavar='', subcommand_metavar='<command>', context_settings=settings)
 def cli():
@@ -13,3 +14,4 @@ def cli():
 
 cli.add_command(train_command)
 cli.add_command(evaluate_command)
+cli.add_command(summarize_command)
