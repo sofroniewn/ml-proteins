@@ -2,6 +2,7 @@ from os.path import join
 from torch.autograd import Variable
 import torch
 from pandas import DataFrame
+from numpy import pi, arctan2, where
 
 def train(trainloader, net, criterion, optimizer, epoch, display):
     net.train()
@@ -60,11 +61,22 @@ def validate(valloader, net, criterion, optimizer, epoch, save, output):
         loss = criterion(outputs, labels).data[0]
         predict = outputs.squeeze(0).squeeze(0).data
         if torch.cuda.is_available():
-            predict = predict.cpu().numpy()
+            predict = predict.cpu().numpy().T
+            valid = inputs.squeeze(0).squeeze(0).data.cpu().numpy().T.max(axis=1)
         else:
-            predict = predict.numpy()
+            predict = predict.numpy().T
+            valid = inputs.squeeze(0).squeeze(0).data.numpy().T.max(axis=1)
+
+        start = where(valid)[0][0]
+        stop = where(valid)[0][-1]
+        predict = predict[start:stop]
+
         if save:
-            DataFrame(predict).to_csv(join(output, 'predict_%05d.csv' % ind))
+            df = DataFrame({'chi': arctan2(predict[:, 0], predict[:, 3]) * 180 / pi,
+                        'phi': arctan2(predict[:, 1], predict[:, 4]) * 180 / pi,
+                        'psi': arctan2(predict[:, 2], predict[:, 5]) * 180 / pi})
+
+            DataFrame(df).to_csv(join(output, 'predict_%05d.csv' % ind))
 
         total += labels.size(0)
         correct += loss
@@ -90,9 +102,19 @@ def run(loader, net, output):
         outputs = net(inputs)
         predict = outputs.squeeze(0).squeeze(0).data
         if torch.cuda.is_available():
-            predict = predict.cpu().numpy()
+            predict = predict.cpu().numpy().T
+            valid = inputs.squeeze(0).squeeze(0).data.cpu().numpy().T.max(axis=1)
         else:
-            predict = predict.numpy()
+            predict = predict.numpy().T
+            valid = inputs.squeeze(0).squeeze(0).data.numpy().T.max(axis=1)
 
-        DataFrame(predict).to_csv(join(output,'predict_%05d.csv' % ind))
+        start = where(valid)[0][0]
+        stop = where(valid)[0][-1]
+        predict = predict[start:stop]
+
+        df = DataFrame({'chi': arctan2(predict[:, 0], predict[:, 3]) * 180 / pi,
+                   'phi': arctan2(predict[:, 1], predict[:, 4]) * 180 / pi,
+                   'psi': arctan2(predict[:, 2], predict[:, 5]) * 180 / pi})
+
+        DataFrame(df).to_csv(join(output,'predict_%05d.csv' % ind))
         ind +=1

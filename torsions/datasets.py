@@ -3,7 +3,7 @@ from torch import FloatTensor
 from os.path import join
 from glob import glob
 from pandas import read_csv
-from numpy import zeros, nan_to_num, pad, sin, cos, concatenate
+from numpy import zeros, nan_to_num, pad, sin, cos, concatenate, pi
 
 aa = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P',
        'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
@@ -32,7 +32,7 @@ class PDBDataset(Dataset):
             sequence[i, aa.index(a[i])] = 1
 
         angles = df[['chi', 'phi', 'psi']].values
-        angles = nan_to_num(angles)
+        angles = nan_to_num(angles) * pi / 180.
         angles = concatenate((sin(angles), cos(angles)), axis=1)
         length = angles.shape[0]
         if length < 200:
