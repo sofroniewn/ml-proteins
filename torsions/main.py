@@ -64,7 +64,7 @@ def validate(valloader, net, criterion, optimizer, epoch, save, output):
         else:
             predict = predict.numpy()
         if save:
-            DataFrame(predict).to_csv('predict_%05d.csv' % ind)
+            DataFrame(predict).to_csv(join(output, 'predict_%05d.csv' % ind))
 
         total += labels.size(0)
         correct += loss
@@ -94,5 +94,5 @@ def run(loader, net, output):
         else:
             predict = predict.numpy()
 
-        DataFrame(predict).to_csv('predict_%05d.csv' % ind)
+        DataFrame(predict).to_csv(join(output,'predict_%05d.csv' % ind))
         ind +=1
