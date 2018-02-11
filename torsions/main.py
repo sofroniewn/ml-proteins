@@ -69,7 +69,7 @@ def validate(valloader, net, criterion, optimizer, epoch, save, output):
 
         start = where(valid)[0][0]
         stop = where(valid)[0][-1]
-        predict = predict[start:stop]
+        predict = predict[start:stop+1]
 
         if save:
             df = DataFrame({'chi': arctan2(predict[:, 0], predict[:, 3]) * 180 / pi,
@@ -110,7 +110,7 @@ def run(loader, net, output):
 
         start = where(valid)[0][0]
         stop = where(valid)[0][-1]
-        predict = predict[start:stop]
+        predict = predict[start:stop+1]
 
         df = DataFrame({'chi': arctan2(predict[:, 0], predict[:, 3]) * 180 / pi,
                    'phi': arctan2(predict[:, 1], predict[:, 4]) * 180 / pi,
