@@ -127,6 +127,7 @@ def summarize(input_dir, prediction_dir):
     results = DataFrame([])
     for idx in range(len(input_files)):
         inputs = read_csv(input_files[idx])
+        inputs = inputs[:700]
         predictions = read_csv(prediction_files[idx])
         inputs.chi = nan_to_num(inputs.chi)
         results = results.append({'chi': MAE(inputs.chi, predictions.chi),

@@ -35,11 +35,14 @@ class PDBDataset(Dataset):
         angles = nan_to_num(angles) * pi / 180.
         angles = concatenate((sin(angles), cos(angles)), axis=1)
         length = angles.shape[0]
-        if length < 200:
+        max_length = 700
+        if length < max_length:
             offset = length % 2
-            angles = pad(angles, (((int((200 - length) / 2), int((200 - length) / 2) + offset), (0, 0))),
+            angles = pad(angles, (((int((max_length - length) / 2), int((max_length - length) / 2) + offset), (0, 0))),
                          mode='constant')
-            sequence = pad(sequence, (((int((200 - length) / 2), int((200 - length) / 2) + offset), (0, 0))),
+            sequence = pad(sequence, (((int((max_length - length) / 2), int((max_length - length) / 2) + offset), (0, 0))),
                            mode='constant')
-
+        else:
+            angles = angles[:max_length]
+            sequence = sequence[:max_length]
         return FloatTensor(sequence.T), FloatTensor(angles.T)
