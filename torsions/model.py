@@ -86,16 +86,15 @@ def initialize_weights(*models):
                 module.bias.data.zero_()
 
 
-
 from torch import zeros
+
 
 class LSTMaa(nn.Module):
 
-    def __init__(self, minibatch_size):
+    def __init__(self):
         super(LSTMaa, self).__init__()
 
         self.hidden_dim = 64
-        self.minibatch_size = minibatch_size
 
         # The LSTM takes word embeddings as inputs, and outputs hidden states
         # with dimensionality hidden_dim.
@@ -103,16 +102,16 @@ class LSTMaa(nn.Module):
 
         # The linear layer that maps from hidden state space to tag space
         self.hidden2target = nn.Linear(64, 6)
-        self.hidden = self.init_hidden()
+
         # print(self.hidden)
 
-    def init_hidden(self):
+    def init_hidden(self, minibatch_size):
         # Before we've done anything, we dont have any hidden state.
         # Refer to the Pytorch documentation to see exactly
         # why they have this dimensionality.
         # The axes semantics are (num_layers, minibatch_size, hidden_dim)
-        return (Variable(zeros(2, self.minibatch_size, self.hidden_dim // 2)),
-                Variable(zeros(2, self.minibatch_size, self.hidden_dim // 2)))
+        return (Variable(zeros(2, minibatch_size, self.hidden_dim // 2)),
+                Variable(zeros(2, minibatch_size, self.hidden_dim // 2)))
 
     def forward(self, sentence):
         lstm_out, self.hidden = self.lstm(sentence, self.hidden)
