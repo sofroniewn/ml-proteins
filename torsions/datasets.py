@@ -45,4 +45,4 @@ class PDBDataset(Dataset):
         else:
             angles = angles[:max_length]
             sequence = sequence[:max_length]
-        return FloatTensor(sequence.T), FloatTensor(angles.T)
+        return FloatTensor(sequence), FloatTensor(angles)

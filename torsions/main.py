@@ -19,6 +19,7 @@ def train(trainloader, net, criterion, optimizer, epoch, display):
             inputs, labels = Variable(inputs).cuda(), Variable(labels).cuda()
         else:
             inputs, labels = Variable(inputs), Variable(labels)
+        net.hidden = net.init_hidden(100)
 
         # zero the parameter gradients
         optimizer.zero_grad()
@@ -57,6 +58,7 @@ def validate(valloader, net, criterion, optimizer, epoch, save, output):
             inputs, labels = Variable(inputs).cuda(), Variable(labels).cuda()
         else:
             inputs, labels = Variable(inputs), Variable(labels)
+        net.hidden = net.init_hidden(1)
 
         outputs = net(inputs)
         loss = criterion(outputs, labels).data[0]
@@ -99,6 +101,7 @@ def run(loader, net, output):
             inputs, labels = Variable(inputs).cuda(), Variable(labels).cuda()
         else:
             inputs, labels = Variable(inputs), Variable(labels)
+        net.hidden = net.init_hidden(1)
 
         outputs = net(inputs)
         predict = outputs.squeeze(0).squeeze(0).data

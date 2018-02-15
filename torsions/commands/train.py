@@ -1,6 +1,6 @@
 import click
 from torsions.datasets import PDBDataset
-from torsions.model import UNet
+from torsions.model import LSTMaa
 from torsions.main import train, validate
 from .common import success, status, error, warn
 from torch import cuda
@@ -48,9 +48,9 @@ def train_command(input, output, epochs, display, lr, resume, save_epoch):
 
     status('loading model')
     if cuda.is_available():
-        net = UNet().cuda()
+        net = LSTMaa().cuda()
     else:
-        net = UNet()
+        net = LSTMaa()
     net.train()
 
     criterion = MSELoss(size_average=True)
