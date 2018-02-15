@@ -102,7 +102,7 @@ class LSTMaa(nn.Module):
         self.lstm = nn.LSTM(20, self.hidden_dim // 2, bidirectional=True, batch_first=True)
 
         # The linear layer that maps from hidden state space to tag space
-        self.hidden2target = nn.Linear(64, 6)
+        self.hidden2target = nn.Linear(self.hidden_dim, 6)
 
         # print(self.hidden)
 
