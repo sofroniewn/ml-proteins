@@ -88,6 +88,7 @@ def initialize_weights(*models):
 
 from torch import zeros
 from torch.autograd import Variable
+from torch import cuda
 
 class LSTMaa(nn.Module):
 
@@ -110,8 +111,12 @@ class LSTMaa(nn.Module):
         # Refer to the Pytorch documentation to see exactly
         # why they have this dimensionality.
         # The axes semantics are (num_layers, minibatch_size, hidden_dim)
-        return (Variable(zeros(2, minibatch_size, self.hidden_dim // 2)),
-                Variable(zeros(2, minibatch_size, self.hidden_dim // 2)))
+        if cuda.is_available():
+            return (Variable(zeros(2, minibatch_size, self.hidden_dim // 2)).cuda(),
+                    Variable(zeros(2, minibatch_size, self.hidden_dim // 2)).cuda())
+        else:
+            return (Variable(zeros(2, minibatch_size, self.hidden_dim // 2)),
+                    Variable(zeros(2, minibatch_size, self.hidden_dim // 2)))
 
     def forward(self, sentence):
         lstm_out, self.hidden = self.lstm(sentence, self.hidden)
