@@ -64,11 +64,11 @@ def validate(valloader, net, criterion, optimizer, epoch, save, output):
         loss = criterion(outputs, labels).data[0]
         predict = outputs.squeeze(0).squeeze(0).data
         if torch.cuda.is_available():
-            predict = predict.cpu().numpy().T
-            valid = inputs.squeeze(0).squeeze(0).data.cpu().numpy().T.max(axis=1)
+            predict = predict.cpu().numpy()
+            valid = inputs.squeeze(0).squeeze(0).data.cpu().numpy().max(axis=1)
         else:
-            predict = predict.numpy().T
-            valid = inputs.squeeze(0).squeeze(0).data.numpy().T.max(axis=1)
+            predict = predict.numpy()
+            valid = inputs.squeeze(0).squeeze(0).data.numpy().max(axis=1)
 
         start = where(valid)[0][0]
         stop = where(valid)[0][-1]
@@ -106,11 +106,11 @@ def run(loader, net, output):
         outputs = net(inputs)
         predict = outputs.squeeze(0).squeeze(0).data
         if torch.cuda.is_available():
-            predict = predict.cpu().numpy().T
-            valid = inputs.squeeze(0).squeeze(0).data.cpu().numpy().T.max(axis=1)
+            predict = predict.cpu().numpy()
+            valid = inputs.squeeze(0).squeeze(0).data.cpu().numpy().max(axis=1)
         else:
-            predict = predict.numpy().T
-            valid = inputs.squeeze(0).squeeze(0).data.numpy().T.max(axis=1)
+            predict = predict.numpy()
+            valid = inputs.squeeze(0).squeeze(0).data.numpy().max(axis=1)
 
         start = where(valid)[0][0]
         stop = where(valid)[0][-1]

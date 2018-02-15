@@ -1,10 +1,10 @@
 import click
 from torsions.datasets import PDBDataset
-from torsions.model import UNet
+from torsions.model import LSTMaa
 from torsions.main import run
 from .common import success, status, error, warn
 from torch.utils.data import DataLoader
-from torch import cuda
+from torch import cuda, load
 from torch.autograd import Variable
 from os.path import join, isdir, exists
 from os import mkdir
@@ -28,11 +28,11 @@ def evaluate_command(input, output, model):
 
     status('loading model')
     if cuda.is_available():
-        net = UNet().cuda()
-        net.load_state_dict(torch.load(model))
+        net = LSTMaa().cuda()
+        net.load_state_dict(load(model))
     else:
-        net = UNet()
-        net.load_state_dict(torch.load(model, map_location=lambda storage, loc: storage))
+        net = LSTMaa()
+        net.load_state_dict(load(model, map_location=lambda storage, loc: storage))
 
     status('evaluating model')
     run(loader, net, output)
