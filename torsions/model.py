@@ -87,7 +87,7 @@ def initialize_weights(*models):
 
 
 from torch import zeros
-
+from torch.autograd import Variable
 
 class LSTMaa(nn.Module):
 
@@ -117,5 +117,4 @@ class LSTMaa(nn.Module):
         lstm_out, self.hidden = self.lstm(sentence, self.hidden)
 
         target = self.hidden2target(lstm_out)
-        print(target.size())
         return target
