@@ -1,7 +1,8 @@
 from os.path import join
 from torch.autograd import Variable
 import torch
-from numpy import pi, arctan2, where, minimum, nan_to_num, stack, norm
+from numpy import pi, arctan2, where, minimum, nan_to_num, stack, array
+from numpy.linalg import norm
 from pandas import DataFrame, read_csv
 from glob import glob
 from torsions.model import criterion_pos, reconstruct
@@ -131,11 +132,11 @@ def summarize(input_dir, prediction_dir):
         inputs = read_csv(input_files[idx])
         predictions = read_csv(prediction_files[idx])
         coords_in = stack([inputs.x, inputs.y, inputs.z], axis=1)
-        coords_pred = stack([coords_pred.x, coords_pred.y, coords_pred.z], axis=1)
+        coords_pred = stack([predictions.x, predictions.y, predictions.z], axis=1)
 
         results = results.append({'bond_angle': MAE(inputs.bond_angle, predictions.bond_angle),
                                   'torsion_angle': MAE(inputs.torsion_angle, predictions.torsion_angle),
-                                  'rmse': norm(coords_in - coords_pred, dim=1).mean()}, ignore_index=True)
+                                  'rmse': array([norm(x) for x in coords_in-coords_pred]).mean()}, ignore_index=True)
     results.to_csv(join(prediction_dir, 'results.csv'))
     return results
 
