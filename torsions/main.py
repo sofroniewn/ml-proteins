@@ -1,9 +1,10 @@
 from os.path import join
 from torch.autograd import Variable
 import torch
-from numpy import pi, arctan2, where, minimum, nan_to_num
+from numpy import pi, arctan2, where, minimum, nan_to_num, stack, norm
 from pandas import DataFrame, read_csv
 from glob import glob
+from torsions.model import criterion_pos, reconstruct
 
 def train(trainloader, net, criterion, optimizer, epoch, display):
     net.train()
@@ -12,21 +13,22 @@ def train(trainloader, net, criterion, optimizer, epoch, display):
     results = DataFrame([])
     for i, data in enumerate(trainloader, 0):
         # get the inputs
-        inputs, labels = data
+        inputs, labels, coords = data
 
         # wrap them in Variable
         if torch.cuda.is_available():
-            inputs, labels = Variable(inputs).cuda(), Variable(labels).cuda()
+            inputs, labels, coords = Variable(inputs).cuda(), Variable(labels).cuda(), Variable(coords).cuda()
         else:
-            inputs, labels = Variable(inputs), Variable(labels)
-        net.hidden = net.init_hidden(100)
+            inputs, labels, coords = Variable(inputs), Variable(labels), Variable(coords)
+        net.hidden = net.init_hidden(1)
 
         # zero the parameter gradients
         optimizer.zero_grad()
 
         # forward + backward + optimize
         outputs = net(inputs)
-        loss = criterion(outputs, labels)
+        bond_angles, torsion_angles, pos = reconstruct(outputs[0], coords[0,:3])
+        loss = criterion(outputs, labels) + criterion_pos(pos, coords[0])
         loss.backward()
         optimizer.step()
 
@@ -52,38 +54,37 @@ def validate(valloader, net, criterion, optimizer, epoch, save, output):
     ind = 0
     results = DataFrame([])
     for data in valloader:
-        inputs, labels = data
+        inputs, labels, coords = data
 
         if torch.cuda.is_available():
-            inputs, labels = Variable(inputs).cuda(), Variable(labels).cuda()
+            inputs, labels, coords = Variable(inputs).cuda(), Variable(labels).cuda(), Variable(coords).cuda()
         else:
-            inputs, labels = Variable(inputs), Variable(labels)
+            inputs, labels, coords = Variable(inputs), Variable(labels), Variable(coords)
         net.hidden = net.init_hidden(1)
 
         outputs = net(inputs)
-        loss = criterion(outputs, labels).data[0]
-        predict = outputs.squeeze(0).squeeze(0).data
-        if torch.cuda.is_available():
-            predict = predict.cpu().numpy()
-            valid = inputs.squeeze(0).squeeze(0).data.cpu().numpy().max(axis=1)
-        else:
-            predict = predict.numpy()
-            valid = inputs.squeeze(0).squeeze(0).data.numpy().max(axis=1)
+        bond_angles, torsion_angles, pos = reconstruct(outputs[0], coords[0, :3])
+        loss = criterion(outputs, labels) + criterion_pos(pos, coords[0])
 
-        start = where(valid)[0][0]
-        stop = where(valid)[0][-1]
-        predict = predict[start:stop+1]
+        if torch.cuda.is_available():
+            bond_angles = bond_angles.data.cpu().numpy()
+            torsion_angles = torsion_angles.data.cpu().numpy()
+            pos = pos.data.cpu().numpy()
+        else:
+            bond_angles = bond_angles.data.numpy()
+            torsion_angles = torsion_angles.data.cpu().numpy()
+            pos = pos.data.cpu().numpy()
 
         if save:
-            df = DataFrame({'chi': arctan2(predict[:, 0], predict[:, 3]) * 180 / pi,
-                        'phi': arctan2(predict[:, 1], predict[:, 4]) * 180 / pi,
-                        'psi': arctan2(predict[:, 2], predict[:, 5]) * 180 / pi})
+            df = DataFrame({'bond_angle': bond_angles,
+                            'torsion_angle': torsion_angles,
+                            'x': pos[:, 0], 'y': pos[:, 1], 'z': pos[:, 2]})
 
             DataFrame(df).to_csv(join(output, 'predict_%05d.csv' % ind))
 
         total += labels.size(0)
-        correct += loss
-        r = {'epoch':[epoch+1], 'batch':[ind+1],'loss':[loss]}
+        correct += loss.data[0]
+        r = {'epoch':[epoch+1], 'batch':[ind+1],'loss':[loss.data[0]]}
         results = results.append(DataFrame(r), ignore_index=True)
         ind += 1
 
@@ -95,31 +96,29 @@ def run(loader, net, output):
     net.eval()
     ind = 0
     for data in loader:
-        inputs, labels = data
+        inputs, labels, coords = data
 
         if torch.cuda.is_available():
-            inputs, labels = Variable(inputs).cuda(), Variable(labels).cuda()
+            inputs, labels, coords = Variable(inputs).cuda(), Variable(labels).cuda(), Variable(coords).cuda()
         else:
-            inputs, labels = Variable(inputs), Variable(labels)
+            inputs, labels, coords = Variable(inputs), Variable(labels), Variable(coords)
         net.hidden = net.init_hidden(1)
 
         outputs = net(inputs)
-        predict = outputs.squeeze(0).squeeze(0).data
+        bond_angles, torsion_angles, pos = reconstruct(outputs[0], coords[0, :3])
+
         if torch.cuda.is_available():
-            predict = predict.cpu().numpy()
-            valid = inputs.squeeze(0).squeeze(0).data.cpu().numpy().max(axis=1)
+            bond_angles = bond_angles.data.cpu().numpy()
+            torsion_angles = torsion_angles.data.cpu().numpy()
+            pos = pos.data.cpu().numpy()
         else:
-            predict = predict.numpy()
-            valid = inputs.squeeze(0).squeeze(0).data.numpy().max(axis=1)
+            bond_angles = bond_angles.data.numpy()
+            torsion_angles = torsion_angles.data.cpu().numpy()
+            pos = pos.data.cpu().numpy()
 
-        start = where(valid)[0][0]
-        stop = where(valid)[0][-1]
-        predict = predict[start:stop+1]
-
-        df = DataFrame({'chi': arctan2(predict[:, 0], predict[:, 3]) * 180 / pi,
-                   'phi': arctan2(predict[:, 1], predict[:, 4]) * 180 / pi,
-                   'psi': arctan2(predict[:, 2], predict[:, 5]) * 180 / pi})
-
+        df = DataFrame({'bond_angle': bond_angles,
+                            'torsion_angle': torsion_angles,
+                            'x': pos[:, 0], 'y': pos[:, 1], 'z': pos[:, 2]})
         DataFrame(df).to_csv(join(output,'predict_%05d.csv' % ind))
         ind +=1
 
@@ -130,12 +129,13 @@ def summarize(input_dir, prediction_dir):
     results = DataFrame([])
     for idx in range(len(input_files)):
         inputs = read_csv(input_files[idx])
-        inputs = inputs[:700]
         predictions = read_csv(prediction_files[idx])
-        inputs.chi = nan_to_num(inputs.chi)
-        results = results.append({'chi': MAE(inputs.chi, predictions.chi),
-                                  'phi': MAE(inputs.phi, predictions.phi),
-                                  'psi': MAE(inputs.psi, predictions.psi)}, ignore_index=True)
+        coords_in = stack([inputs.x, inputs.y, inputs.z], axis=1)
+        coords_pred = stack([coords_pred.x, coords_pred.y, coords_pred.z], axis=1)
+
+        results = results.append({'bond_angle': MAE(inputs.bond_angle, predictions.bond_angle),
+                                  'torsion_angle': MAE(inputs.torsion_angle, predictions.torsion_angle),
+                                  'rmse': norm(coords_in - coords_pred, dim=1).mean()}, ignore_index=True)
     results.to_csv(join(prediction_dir, 'results.csv'))
     return results
 

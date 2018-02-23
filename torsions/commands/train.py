@@ -39,7 +39,7 @@ def train_command(input, output, epochs, display, lr, resume, save_epoch):
     status('setting up dataset from %s' % input)
     train_dataset = PDBDataset(join(input, 'train'))
 
-    trainloader = DataLoader(train_dataset, batch_size=100,
+    trainloader = DataLoader(train_dataset, batch_size=1,
                                           shuffle=True, num_workers=2, drop_last=True)
 
     val_dataset = PDBDataset(join(input, 'val'))

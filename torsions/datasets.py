@@ -3,11 +3,11 @@ from torch import FloatTensor
 from os.path import join
 from glob import glob
 from pandas import read_csv
-from numpy import zeros, nan_to_num, pad, sin, cos, concatenate, pi
+from numpy import zeros, stack, sin, cos, pi
 
-aa = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P',
-       'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
-
+aa = ['PRO', 'TYR', 'THR', 'VAL', 'PHE', 'ARG', 'GLY', 'CYS', 'ALA',
+       'LEU', 'MET', 'ASP', 'GLN', 'SER', 'TRP', 'LYS', 'GLU', 'ASN',
+       'ILE', 'HIS']
 
 class PDBDataset(Dataset):
     """Dataset for parsed pdb files"""
@@ -26,23 +26,23 @@ class PDBDataset(Dataset):
     def __getitem__(self, idx):
 
         df = read_csv(self.names[idx])
-        a = df.aa.values
-        sequence = zeros((len(a), 20))
-        for i in range(len(a)):
-            sequence[i, aa.index(a[i])] = 1
+        sequence = zeros((len(df)//3, 20))
+        angles = zeros((len(df)//3, 12))
 
-        angles = df[['chi', 'phi', 'psi']].values
-        angles = nan_to_num(angles) * pi / 180.
-        angles = concatenate((sin(angles), cos(angles)), axis=1)
-        length = angles.shape[0]
-        max_length = 700
-        if length < max_length:
-            offset = length % 2
-            angles = pad(angles, (((int((max_length - length) / 2), int((max_length - length) / 2) + offset), (0, 0))),
-                         mode='constant')
-            sequence = pad(sequence, (((int((max_length - length) / 2), int((max_length - length) / 2) + offset), (0, 0))),
-                           mode='constant')
-        else:
-            angles = angles[:max_length]
-            sequence = sequence[:max_length]
-        return FloatTensor(sequence), FloatTensor(angles)
+        for i in range(len(df)//3):
+            sequence[i, aa.index(df.aa[3*i])] = 1
+            angles[i, 0] = sin(df.bond_angle[3*i]*pi/180)
+            angles[i, 1] = cos(df.bond_angle[3*i]*pi/180)
+            angles[i, 2] = sin(df.bond_angle[3*i+1]*pi/180)
+            angles[i, 3] = cos(df.bond_angle[3*i+1]*pi/180)
+            angles[i, 4] = sin(df.bond_angle[3*i+2]*pi/180)
+            angles[i, 5] = cos(df.bond_angle[3*i+2]*pi/180)
+            angles[i, 6] = sin(df.torsion_angle[3*i]*pi/180)
+            angles[i, 7] = cos(df.torsion_angle[3*i]*pi/180)
+            angles[i, 8] = sin(df.torsion_angle[3*i+1]*pi/180)
+            angles[i, 9] = cos(df.torsion_angle[3*i+1]*pi/180)
+            angles[i, 10] = sin(df.torsion_angle[3*i+2]*pi/180)
+            angles[i, 11] = cos(df.torsion_angle[3*i+2]*pi/180)
+        coords = stack([df.x, df.y, df.z], axis=1)
+
+        return FloatTensor(sequence), FloatTensor(angles), FloatTensor(coords)

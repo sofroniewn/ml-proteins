@@ -102,7 +102,7 @@ class LSTMaa(nn.Module):
         self.lstm = nn.LSTM(20, self.hidden_dim // 2, bidirectional=True, batch_first=True)
 
         # The linear layer that maps from hidden state space to tag space
-        self.hidden2target = nn.Linear(self.hidden_dim, 6)
+        self.hidden2target = nn.Linear(self.hidden_dim, 12)
 
         # print(self.hidden)
 
@@ -123,3 +123,35 @@ class LSTMaa(nn.Module):
 
         target = self.hidden2target(lstm_out)
         return target
+
+from torch import atan2, stack, sin, cos, Tensor, cross, norm, mm
+from numpy import pi
+from torch.autograd import Variable
+
+def position(A, B, C, bc, R, theta, phi):
+    n = cross(B-A, C-B)
+    n = n/norm(n)
+    D = stack([R*cos(theta), R*sin(theta)*cos(phi), R*sin(theta)*sin(phi)])
+    M = stack([(C-B)/bc, cross(n, C-B)/bc, n], dim=1)
+    return mm(M,D).squeeze() + C
+
+def criterion_pos(outputs, labels):
+    return norm(outputs - labels, dim=1).mean()
+
+def reconstruct(ang, init):
+    N_Ca = 1.458
+    Ca_C = 1.525
+    C_N = 1.329
+    R = [C_N, N_Ca, Ca_C]
+    bond_angles = stack([atan2(ang[:,0], ang[:,1]), atan2(ang[:,2], ang[:,3]), atan2(ang[:,4], ang[:,5])], dim=1).view(-1)
+    torsion_angles = stack([atan2(ang[:,6], ang[:,7]), atan2(ang[:,8], ang[:,9]), atan2(ang[:,10], ang[:,11])], dim=1).view(-1)
+    if cuda.is_available():
+        pos = Variable(Tensor(len(bond_angles),3)).cuda()
+    else:
+        pos = Variable(Tensor(len(bond_angles),3))
+    pos[0] = init[0]
+    pos[1] = init[1]
+    pos[2] = init[2]
+    for ij in range(3, len(bond_angles)):
+        pos[ij] = position(pos[ij-3], pos[ij-2], pos[ij-1], R[(ij-1)%3], R[ij%3], (pi-bond_angles[ij-1]), torsion_angles[ij-1])
+    return bond_angles*180/pi, torsion_angles*180/pi, pos
