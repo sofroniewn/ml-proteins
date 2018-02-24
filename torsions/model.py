@@ -95,7 +95,7 @@ class LSTMaa(nn.Module):
     def __init__(self):
         super(LSTMaa, self).__init__()
 
-        self.hidden_dim = 256
+        self.hidden_dim = 64
 
         # The LSTM takes word embeddings as inputs, and outputs hidden states
         # with dimensionality hidden_dim.
