@@ -29,7 +29,8 @@ def train(trainloader, net, criterion, optimizer, epoch, display):
         # forward + backward + optimize
         outputs = net(inputs)
         bond_angles, torsion_angles, pos = reconstruct(outputs[0], coords[0,:3])
-        loss = criterion(outputs, labels) + criterion_pos(pos, coords[0])
+        #loss = criterion(outputs, labels) + criterion_pos(pos, coords[0])
+        loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
 
@@ -65,7 +66,8 @@ def validate(valloader, net, criterion, optimizer, epoch, save, output):
 
         outputs = net(inputs)
         bond_angles, torsion_angles, pos = reconstruct(outputs[0], coords[0, :3])
-        loss = criterion(outputs, labels) + criterion_pos(pos, coords[0])
+        #loss = criterion(outputs, labels) + criterion_pos(pos, coords[0])
+        loss = criterion(outputs, labels)
 
         if torch.cuda.is_available():
             bond_angles = bond_angles.data.cpu().numpy()
