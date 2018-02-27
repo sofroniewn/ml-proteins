@@ -56,9 +56,10 @@ def stack_pack(var, lengths):
     max_len, n_feats = var[0].size()
     var = [cat((s, zeros(max_len - s.size(0), n_feats)), 0) if s.size(0) != max_len else s for s in var]
     var = stack(var, 0)
-    var = Variable(var)
     if cuda.is_available():
-        var = var.cuda()
+        var = Variable(var).cuda()
+    else:
+        var = Variable(var)
     return pack(var, lengths, batch_first=True)
 
 
