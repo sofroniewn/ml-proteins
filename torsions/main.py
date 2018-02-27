@@ -6,6 +6,7 @@ from numpy.linalg import norm
 from pandas import DataFrame, read_csv
 from glob import glob
 from torsions.model import criterion_pos, reconstruct
+from torch.nn.utils.rnn import pad_packed_sequence as unpack
 
 def train(trainloader, net, criterion, optimizer, epoch, display):
     net.train()
@@ -13,24 +14,26 @@ def train(trainloader, net, criterion, optimizer, epoch, display):
     count = 0.0
     results = DataFrame([])
     for i, data in enumerate(trainloader, 0):
-        # get the inputs
+        # get the inputs as packed sequences
         inputs, labels, coords = data
 
-        # wrap them in Variable
-        if torch.cuda.is_available():
-            inputs, labels, coords = Variable(inputs).cuda(), Variable(labels).cuda(), Variable(coords).cuda()
-        else:
-            inputs, labels, coords = Variable(inputs), Variable(labels), Variable(coords)
-        net.hidden = net.init_hidden(1)
+        net.hidden = net.init_hidden(trainloader.batch_size)
 
         # zero the parameter gradients
         optimizer.zero_grad()
 
         # forward + backward + optimize
         outputs = net(inputs)
-        bond_angles, torsion_angles, pos = reconstruct(outputs[0], coords[0,:3])
-        #loss = criterion(outputs, labels) + criterion_pos(pos, coords[0])
-        loss = criterion(outputs, labels)
+
+        o, l_o = unpack(outputs, batch_first=True)
+        c, l_c = unpack(coords, batch_first=True)
+        loss_pos = 0
+        for ij in range(trainloader.batch_size):
+            bond_angles, torsion_angles, pos = reconstruct(o[ij, :l_o[ij]], c[ij, :3])
+            loss_pos = loss_pos + criterion_pos(pos, c[ij, :l_c[ij]])
+        loss_pos = loss_pos / trainloader.batch_size
+
+        loss = criterion(outputs.data, labels.data) + loss_pos
         loss.backward()
         optimizer.step()
 
@@ -66,8 +69,8 @@ def validate(valloader, net, criterion, optimizer, epoch, save, output):
 
         outputs = net(inputs)
         bond_angles, torsion_angles, pos = reconstruct(outputs[0], coords[0, :3])
-        #loss = criterion(outputs, labels) + criterion_pos(pos, coords[0])
-        loss = criterion(outputs, labels)
+        loss = criterion(outputs, labels) + criterion_pos(pos, coords[0])
+        #loss = criterion(outputs, labels)
 
         if torch.cuda.is_available():
             bond_angles = bond_angles.data.cpu().numpy()

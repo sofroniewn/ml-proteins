@@ -1,5 +1,5 @@
 import click
-from torsions.datasets import PDBDataset
+from torsions.datasets import PDBDataset, pad_packed_collate
 from torsions.model import LSTMaa
 from torsions.main import train, validate
 from .common import success, status, error, warn
@@ -39,8 +39,8 @@ def train_command(input, output, epochs, display, lr, resume, save_epoch):
     status('setting up dataset from %s' % input)
     train_dataset = PDBDataset(join(input, 'train'))
 
-    trainloader = DataLoader(train_dataset, batch_size=1,
-                                          shuffle=True, num_workers=2, drop_last=True)
+    trainloader = DataLoader(train_dataset, batch_size=32,
+                                          shuffle=True, num_workers=2, drop_last=True, collate_fn=pad_packed_collate)
 
     val_dataset = PDBDataset(join(input, 'val'))
     valloader = DataLoader(val_dataset, batch_size=1,
