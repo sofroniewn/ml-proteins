@@ -7,6 +7,7 @@ from pandas import DataFrame, read_csv
 from glob import glob
 from torsions.model import criterion_pos, reconstruct
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
+from torch.nn.utils import clip_grad_norm
 
 def train(trainloader, net, criterion, optimizer, epoch, display):
     net.train()
@@ -35,6 +36,8 @@ def train(trainloader, net, criterion, optimizer, epoch, display):
 
         loss = criterion(outputs.data, labels.data) + loss_pos
         loss.backward()
+        clip_grad_norm(net.parameters(), 0.5)
+
         optimizer.step()
 
         # print statistics
