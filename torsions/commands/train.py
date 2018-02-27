@@ -40,11 +40,11 @@ def train_command(input, output, epochs, display, lr, resume, save_epoch):
     train_dataset = PDBDataset(join(input, 'train'))
 
     trainloader = DataLoader(train_dataset, batch_size=32,
-                                          shuffle=True, num_workers=2, drop_last=True, collate_fn=pad_packed_collate)
+                                          shuffle=True, num_workers=1, drop_last=True, collate_fn=pad_packed_collate)
 
     val_dataset = PDBDataset(join(input, 'val'))
     valloader = DataLoader(val_dataset, batch_size=1,
-                                          shuffle=False, num_workers=2)
+                                          shuffle=False, num_workers=1)
 
     status('loading model')
     if cuda.is_available():

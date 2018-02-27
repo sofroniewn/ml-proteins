@@ -24,7 +24,7 @@ def evaluate_command(input, output, model):
     status('setting up dataset from %s' % input)
 
     dataset = PDBDataset(input)
-    loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=2)
+    loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1)
 
     status('loading model')
     if cuda.is_available():
