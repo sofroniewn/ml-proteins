@@ -34,7 +34,7 @@ def train(trainloader, net, criterion, optimizer, epoch, display, rmsd_loss):
                 bond_angles, torsion_angles, pos = reconstruct(o[ij, :l_o[ij]], c[ij, :3])
                 loss_pos = loss_pos + criterion_rmsd(pos, c[ij, :l_c[ij]])
             loss_pos = loss_pos / trainloader.batch_size
-            loss = criterion(outputs.data, labels.data) + loss_pos
+            loss = loss_pos
         else:
             loss = criterion(outputs.data, labels.data)
 
@@ -76,7 +76,7 @@ def validate(valloader, net, criterion, optimizer, epoch, save, output, rmsd_los
         outputs = net(inputs)
         bond_angles, torsion_angles, pos = reconstruct(outputs[0], coords[0, :3])
         if rmsd_loss:
-            loss = criterion(outputs, labels) + criterion_rmsd(pos, coords[0])
+            loss = criterion_rmsd(pos, coords[0])
         else:
             loss = criterion(outputs, labels)
 
@@ -142,6 +142,7 @@ def summarize(input_dir, prediction_dir):
 
     results = DataFrame([])
     for idx in range(len(input_files)):
+        print(idx)
         inputs = read_csv(input_files[idx])
         predictions = read_csv(prediction_files[idx])
         coords_in = stack([inputs.x, inputs.y, inputs.z], axis=1)
