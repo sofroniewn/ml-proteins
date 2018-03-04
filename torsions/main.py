@@ -9,7 +9,7 @@ from torsions.model import reconstruct, criterion_rmsd
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils import clip_grad_norm
 
-def train(trainloader, net, criterion, optimizer, epoch, display):
+def train(trainloader, net, criterion, optimizer, epoch, display, rmsd_loss):
     net.train()
     running_loss = 0.0
     count = 0.0
@@ -26,15 +26,18 @@ def train(trainloader, net, criterion, optimizer, epoch, display):
         # forward + backward + optimize
         outputs = net(inputs)
 
-        o, l_o = unpack(outputs, batch_first=True)
-        c, l_c = unpack(coords, batch_first=True)
-        loss_pos = 0
-        for ij in range(trainloader.batch_size):
-            bond_angles, torsion_angles, pos = reconstruct(o[ij, :l_o[ij]], c[ij, :3])
-            loss_pos = loss_pos + criterion_rmsd(pos, c[ij, :l_c[ij]])
-        loss_pos = loss_pos / trainloader.batch_size
+        if rmsd_loss:
+            o, l_o = unpack(outputs, batch_first=True)
+            c, l_c = unpack(coords, batch_first=True)
+            loss_pos = 0
+            for ij in range(trainloader.batch_size):
+                bond_angles, torsion_angles, pos = reconstruct(o[ij, :l_o[ij]], c[ij, :3])
+                loss_pos = loss_pos + criterion_rmsd(pos, c[ij, :l_c[ij]])
+            loss_pos = loss_pos / trainloader.batch_size
+            loss = criterion(outputs.data, labels.data) + loss_pos
+        else:
+            loss = criterion(outputs.data, labels.data)
 
-        loss = criterion(outputs.data, labels.data) + loss_pos
         loss.backward()
         clip_grad_norm(net.parameters(), 0.5)
 
@@ -52,7 +55,7 @@ def train(trainloader, net, criterion, optimizer, epoch, display):
             count = 0.0
     return results
 
-def validate(valloader, net, criterion, optimizer, epoch, save, output):
+def validate(valloader, net, criterion, optimizer, epoch, save, output, rmsd_loss):
     net.eval()
     if save:
         torch.save(net.state_dict(), join(output, 'model.pth'))
@@ -72,8 +75,10 @@ def validate(valloader, net, criterion, optimizer, epoch, save, output):
 
         outputs = net(inputs)
         bond_angles, torsion_angles, pos = reconstruct(outputs[0], coords[0, :3])
-        loss = criterion(outputs, labels) + criterion_rmsd(pos, coords[0])
-        #loss = criterion(outputs, labels)
+        if rmsd_loss:
+            loss = criterion(outputs, labels) + criterion_rmsd(pos, coords[0])
+        else:
+            loss = criterion(outputs, labels)
 
         if torch.cuda.is_available():
             bond_angles = bond_angles.data.cpu().numpy()

@@ -7,11 +7,9 @@ from torch import cuda
 from torch.nn import MSELoss
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-from torch.autograd import Variable
 from os.path import join, isdir, exists
 from os import mkdir
 from shutil import rmtree
-from numpy import random
 from pandas import DataFrame, read_csv
 
 @click.argument('output', nargs=1, metavar='<output directory>', required=False, default=None)
@@ -20,10 +18,11 @@ from pandas import DataFrame, read_csv
 @click.option('--epochs', nargs=1, default=2, type=int, help='Number of epochs')
 @click.option('--display', nargs=1, default=20, type=int, help='Number of train samples before displaying result')
 @click.option('--save_epoch', nargs=1, default=None, type=int, help='Number of epochs before saving')
+@click.option('--rmsd_loss', is_flag=True, default=False, help='Whether to use rmsd loss')
 @click.option('--lr', nargs=1, default=0.01, type=float, help='Learning rate')
 @click.command('train', short_help='train on input directory', options_metavar='<options>')
 
-def train_command(input, output, epochs, display, lr, resume, save_epoch):
+def train_command(input, output, epochs, display, lr, resume, save_epoch, rmsd_loss):
     overwrite = True
 
 
@@ -64,7 +63,7 @@ def train_command(input, output, epochs, display, lr, resume, save_epoch):
 
     status('starting training')
     for epoch in range(resume, resume+epochs):  # loop over the dataset multiple times
-        results = train(trainloader, net, criterion, optimizer, epoch, display)
+        results = train(trainloader, net, criterion, optimizer, epoch, display, rmsd_loss)
         r = r.append(results, ignore_index=True)
         r.to_csv(join(output,'train.csv'))
 
@@ -82,7 +81,7 @@ def train_command(input, output, epochs, display, lr, resume, save_epoch):
                     mkdir(save_path)
                 else:
                     mkdir(save_path)
-                resultsV = validate(valloader, net, criterion, optimizer, epoch, True, save_path)
+                resultsV = validate(valloader, net, criterion, optimizer, epoch, True, save_path, rmsd_loss)
                 rV = rV.append(resultsV, ignore_index=True)
                 rV.to_csv(join(output,'val.csv'))
 
@@ -98,6 +97,6 @@ def train_command(input, output, epochs, display, lr, resume, save_epoch):
         mkdir(save_path)
     else:
         mkdir(save_path)
-    resultsV = validate(valloader, net, criterion, optimizer, epoch, True, save_path)
+    resultsV = validate(valloader, net, criterion, optimizer, epoch, True, save_path, rmsd_loss)
     rV = rV.append(resultsV, ignore_index=True)
     rV.to_csv(join(output,'val.csv'))
