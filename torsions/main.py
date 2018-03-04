@@ -163,4 +163,4 @@ def dRMSD(x, y):
     return loss
 
 def rmsd(outputs, labels):
-    return (norm(outputs - labels, dim=1)**(2)).mean()**(1/2)
+    return (norm(outputs - labels, axis=1)**(2)).mean()**(1/2)
