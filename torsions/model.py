@@ -54,9 +54,6 @@ def position(A, B, C, bc, R, theta, phi):
     M = stack([(C-B)/bc, cross(n, C-B)/bc, n], dim=1)
     return mm(M,D).squeeze() + C
 
-def criterion_pos(outputs, labels):
-    return norm(outputs - labels, dim=1).mean()
-
 def reconstruct(ang, init):
     N_Ca = 1.458
     Ca_C = 1.525
@@ -74,3 +71,6 @@ def reconstruct(ang, init):
     for ij in range(3, len(bond_angles)):
         pos[ij] = position(pos[ij-3], pos[ij-2], pos[ij-1], R[(ij-1)%3], R[ij%3], (pi-bond_angles[ij-1]), torsion_angles[ij-1])
     return bond_angles*180/pi, torsion_angles*180/pi, pos
+
+def criterion_rmsd(outputs, labels):
+    return (norm(outputs - labels, dim=1)**(2)).mean()**(1/2)

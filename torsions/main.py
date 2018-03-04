@@ -1,11 +1,11 @@
 from os.path import join
 from torch.autograd import Variable
 import torch
-from numpy import pi, arctan2, where, minimum, nan_to_num, stack, array
+from numpy import minimum, stack
 from numpy.linalg import norm
 from pandas import DataFrame, read_csv
 from glob import glob
-from torsions.model import criterion_pos, reconstruct
+from torsions.model import reconstruct, criterion_rmsd
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils import clip_grad_norm
 
@@ -31,7 +31,7 @@ def train(trainloader, net, criterion, optimizer, epoch, display):
         loss_pos = 0
         for ij in range(trainloader.batch_size):
             bond_angles, torsion_angles, pos = reconstruct(o[ij, :l_o[ij]], c[ij, :3])
-            loss_pos = loss_pos + criterion_pos(pos, c[ij, :l_c[ij]])
+            loss_pos = loss_pos + criterion_rmsd(pos, c[ij, :l_c[ij]])
         loss_pos = loss_pos / trainloader.batch_size
 
         loss = criterion(outputs.data, labels.data) + loss_pos
@@ -72,7 +72,7 @@ def validate(valloader, net, criterion, optimizer, epoch, save, output):
 
         outputs = net(inputs)
         bond_angles, torsion_angles, pos = reconstruct(outputs[0], coords[0, :3])
-        loss = criterion(outputs, labels) + criterion_pos(pos, coords[0])
+        loss = criterion(outputs, labels) + criterion_rmsd(pos, coords[0])
         #loss = criterion(outputs, labels)
 
         if torch.cuda.is_available():
@@ -144,10 +144,23 @@ def summarize(input_dir, prediction_dir):
 
         results = results.append({'bond_angle': MAE(inputs.bond_angle, predictions.bond_angle),
                                   'torsion_angle': MAE(inputs.torsion_angle, predictions.torsion_angle),
-                                  'rmse': array([norm(x) for x in coords_in-coords_pred]).mean()}, ignore_index=True)
+                                  'RMSD': rmsd(coords_in, coords_pred),
+                                  'dRMSD': dRMSD(coords_in, coords_pred)}, ignore_index=True)
     results.to_csv(join(prediction_dir, 'results.csv'))
     return results
 
 
 def MAE(x, y):
     return sum(minimum(abs(y - x), 360 - abs(y - x))) / len(x)
+
+def dRMSD(x, y):
+    loss = 0
+    for i in range(len(x)):
+        for j in range(len(x)):
+            loss = loss + (norm(x[i]-x[j])-norm(y[i]-y[j]))**2
+    loss = loss/(len(x))/(len(x)-1)
+    loss = loss**(1/2)
+    return loss
+
+def rmsd(outputs, labels):
+    return (norm(outputs - labels, dim=1)**(2)).mean()**(1/2)
