@@ -148,8 +148,10 @@ def summarize(input_dir, prediction_dir):
         coords_in = stack([inputs.x, inputs.y, inputs.z], axis=1)
         coords_pred = stack([predictions.x, predictions.y, predictions.z], axis=1)
 
-        results = results.append({'bond_angle': MAE(inputs.bond_angle, predictions.bond_angle),
-                                  'torsion_angle': MAE(inputs.torsion_angle, predictions.torsion_angle),
+        results = results.append({'bond_angle': MAE(inputs.bond_angle[1:-1], predictions.bond_angle[1:-1]),
+                                  'omega': MAE(inputs.torsion_angle[3::3], predictions.torsion_angle[3::3]),
+                                  'psi': MAE(inputs.torsion_angle[4::3], predictions.torsion_angle[4::3]),
+                                  'phi': MAE(inputs.torsion_angle[2:-1:3], predictions.torsion_angle[2:-1:3]),
                                   'RMSD': rmsd(coords_in, coords_pred),
                                   'dRMSD': dRMSD(coords_in, coords_pred)}, ignore_index=True)
     results.to_csv(join(prediction_dir, 'results.csv'))
