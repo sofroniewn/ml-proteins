@@ -3,7 +3,7 @@ from torsions.datasets import PDBDataset, pad_packed_collate
 from torsions.model import LSTMaa
 from torsions.main import train, validate
 from .common import success, status, error, warn
-from torch import cuda
+from torch import cuda, load
 from torch.nn import MSELoss
 from torch.optim import Adam
 from torch.utils.data import DataLoader
@@ -58,8 +58,8 @@ def train_command(input, output, epochs, display, lr, resume, save_epoch, rmsd_l
     if resume is not 0:
         snapshot_name = 'model-%04d' % resume
         status('loading network %s' % snapshot_name)
-        net.load_state_dict(torch.load(join(output, snapshot_name, 'model.pth')))
-        optimizer.load_state_dict(torch.load(join(output, snapshot_name, 'opt.pth')))
+        net.load_state_dict(load(join(output, snapshot_name, 'model.pth')))
+        optimizer.load_state_dict(load(join(output, snapshot_name, 'opt.pth')))
 
     status('starting training')
     for epoch in range(resume, resume+epochs):  # loop over the dataset multiple times
