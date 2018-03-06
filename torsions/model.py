@@ -73,5 +73,4 @@ def reconstruct(ang, init):
     return bond_angles*180/pi, torsion_angles*180/pi, pos
 
 def criterion_rmsd(outputs, labels):
-#    return (norm(outputs - labels, dim=1)**(2)).mean()**(1/2)
-    return norm(outputs - labels, dim=1).mean()
+    return norm(outputs - labels, dim=1).pow(2).mean().pow(0.5)
