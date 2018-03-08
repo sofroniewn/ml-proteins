@@ -5,11 +5,11 @@ from numpy import minimum, stack
 from numpy.linalg import norm
 from pandas import DataFrame, read_csv
 from glob import glob
-from torsions.model import reconstruct, criterion_rmsd
+from torsions.model import reconstruct, criterion_rmsd, criterion_drmsd
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils import clip_grad_norm
 
-def train(trainloader, net, criterion, optimizer, epoch, display, rmsd_loss):
+def train(trainloader, net, criterion, optimizer, epoch, display, rmsd_loss, drmsd_loss):
     net.train()
     running_loss = 0.0
     count = 0.0
@@ -35,6 +35,15 @@ def train(trainloader, net, criterion, optimizer, epoch, display, rmsd_loss):
                 loss_pos = loss_pos + criterion_rmsd(pos, c[ij, :l_c[ij]])
             loss_pos = loss_pos / trainloader.batch_size
             loss = loss_pos
+        elif drmsd_loss:
+            o, l_o = unpack(outputs, batch_first=True)
+            c, l_c = unpack(coords, batch_first=True)
+            loss_pos = 0
+            for ij in range(trainloader.batch_size):
+                bond_angles, torsion_angles, pos = reconstruct(o[ij, :l_o[ij]], c[ij, :3])
+                loss_pos = loss_pos + criterion_drmsd(pos, c[ij, :l_c[ij]])
+            loss_pos = loss_pos / trainloader.batch_size
+            loss = loss_pos
         else:
             loss = criterion(outputs.data, labels.data)
 
@@ -55,7 +64,7 @@ def train(trainloader, net, criterion, optimizer, epoch, display, rmsd_loss):
             count = 0.0
     return results
 
-def validate(valloader, net, criterion, optimizer, epoch, save, output, rmsd_loss):
+def validate(valloader, net, criterion, optimizer, epoch, save, output, rmsd_loss, drmsd_loss):
     net.eval()
     if save:
         torch.save(net.state_dict(), join(output, 'model.pth'))
@@ -77,6 +86,8 @@ def validate(valloader, net, criterion, optimizer, epoch, save, output, rmsd_los
         bond_angles, torsion_angles, pos = reconstruct(outputs[0], coords[0, :3])
         if rmsd_loss:
             loss = criterion_rmsd(pos, coords[0])
+        elif drmsd_loss:
+            loss = criterion_drmsd(pos, coords[0])
         else:
             loss = criterion(outputs, labels)
 
@@ -153,7 +164,8 @@ def summarize(input_dir, prediction_dir):
                                   'psi': MAE(inputs.torsion_angle[4::3], predictions.torsion_angle[4::3]),
                                   'phi': MAE(inputs.torsion_angle[2:-1:3], predictions.torsion_angle[2:-1:3]),
                                   'RMSD': rmsd(coords_in, coords_pred),
-                                  'dRMSD': dRMSD(coords_in, coords_pred)}, ignore_index=True)
+                                  'dRMSD': dRMSD(coords_in, coords_pred),
+                                  'length': len(inputs)/3}, ignore_index=True)
     results.to_csv(join(prediction_dir, 'results.csv'))
     return results
 
@@ -163,10 +175,10 @@ def MAE(x, y):
 
 def dRMSD(x, y):
     loss = 0
-    for i in range(len(x)):
-        for j in range(len(x)):
+    for i in range(len(x)-1):
+        for j in range(i+1, len(x)):
             loss = loss + (norm(x[i]-x[j])-norm(y[i]-y[j]))**2
-    loss = loss/(len(x))/(len(x)-1)
+    loss = 2*loss/(len(x))/(len(x)-1)
     loss = loss**(1/2)
     return loss
 

@@ -74,3 +74,12 @@ def reconstruct(ang, init):
 
 def criterion_rmsd(outputs, labels):
     return norm(outputs - labels, dim=1).pow(2).mean().pow(0.5)
+
+def criterion_drmsd(x, y):
+    loss = 0
+    for i in range(len(x)-1):
+        for j in range(i+1, len(x)):
+            loss = loss + (norm(x[i]-x[j])-norm(y[i]-y[j])).pow(2)
+    loss = 2*loss/(len(x))/(len(x)-1)
+    loss = loss.pow(0.5)
+    return loss
