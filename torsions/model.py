@@ -4,7 +4,7 @@ from torch import zeros
 from torch.autograd import Variable
 from torch import cuda
 from torch.nn.utils.rnn import PackedSequence
-from torch import transpose, mm, diag, clamp
+from torch import transpose, mm, diag, clamp, sum
 from numpy import inf
 
 class LSTMaa(nn.Module):
@@ -87,11 +87,12 @@ def pdist(x):
     dist = x_norm + y_norm - 2 * mm(x, y_t)
     dist = dist - diag(dist.diag())
     dist = clamp(dist, 0.0, inf)
-    dist = dist.pow(0.5)
-    #dist[(dist != dist).detach()] = 0
+    #dist = dist.pow(0.5)
+    dist[(dist != dist).detach()] = 0
     print('max dist:')
     print(dist.max().data[0])
     return dist
+
 
 def criterion_drmsd(x, y):
         return ((pdist(x) - pdist(y)).pow(2).mean()*len(x)/(len(x)-1)).pow(0.5)
