@@ -84,7 +84,7 @@ def pdist(x):
 
     dist = x_norm + y_norm - 2 * mm(x, y_t)
     dist = dist - diag(dist.diag())
-    dist = clamp(dist.pow(0.5), 0.0, inf)
+    dist = clamp(dist.pow(0.5), 0.0, 1e12)
     dist[(dist != dist).detach()] = 0
     return dist
 
