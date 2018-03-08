@@ -86,6 +86,7 @@ def pdist(x):
     dist = dist - diag(dist.diag())
     dist = clamp(dist.pow(0.5), 0.0, 1e12)
     dist[(dist != dist).detach()] = 0
+    print(dist.max().data[0])
     return dist
 
 def criterion_drmsd(x, y):
