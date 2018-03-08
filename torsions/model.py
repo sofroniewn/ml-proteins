@@ -78,6 +78,8 @@ def criterion_rmsd(outputs, labels):
     return (3**(0.5))*(outputs - labels).pow(2).mean().pow(0.5)
 
 def pdist(x):
+    print('max x:')
+    print(x.max().data[0])
     x_norm = x.pow(2).sum(1).view(-1, 1)
     y_t = transpose(x, 0, 1)
     y_norm = x_norm.view(1, -1)
@@ -86,6 +88,7 @@ def pdist(x):
     dist = dist - diag(dist.diag())
     dist = clamp(dist.pow(0.5), 0.0, 1e12)
     dist[(dist != dist).detach()] = 0
+    print('max dist:')
     print(dist.max().data[0])
     return dist
 
