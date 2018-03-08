@@ -91,4 +91,5 @@ def pdist(x):
 
 
 def criterion_drmsd(x, y):
-        return ((pdist(x) - pdist(y)).pow(2).mean()*len(x)/(len(x)-1)).pow(0.5)
+#        return ((pdist(x) - pdist(y)).pow(2).mean()*len(x)/(len(x)-1)).pow(0.5)
+    return (pdist(x) - pdist(y)).pow(2).mean()
