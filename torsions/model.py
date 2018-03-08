@@ -4,6 +4,8 @@ from torch import zeros
 from torch.autograd import Variable
 from torch import cuda
 from torch.nn.utils.rnn import PackedSequence
+from torch import transpose, mm, diag, clamp
+from numpy import inf
 
 class LSTMaa(nn.Module):
 
@@ -73,13 +75,18 @@ def reconstruct(ang, init):
     return bond_angles*180/pi, torsion_angles*180/pi, pos
 
 def criterion_rmsd(outputs, labels):
-    return norm(outputs - labels, dim=1).pow(2).mean().pow(0.5)
+    return (3**(0.5))*(outputs - labels).pow(2).mean().pow(0.5)
+
+def pdist(x):
+    x_norm = x.pow(2).sum(1).view(-1, 1)
+    y_t = transpose(x, 0, 1)
+    y_norm = x_norm.view(1, -1)
+
+    dist = x_norm + y_norm - 2 * mm(x, y_t)
+    dist = dist - diag(dist.diag())
+    dist = clamp(dist.pow(0.5), 0.0, inf)
+    dist[(dist != dist).detach()] = 0
+    return dist
 
 def criterion_drmsd(x, y):
-    loss = 0
-    for i in range(len(x)-1):
-        for j in range(i+1, len(x)):
-            loss = loss + (norm(x[i]-x[j])-norm(y[i]-y[j])).pow(2)
-    loss = 2*loss/(len(x))/(len(x)-1)
-    loss = loss.pow(0.5)
-    return loss
+        return ((pdist(x) - pdist(y)).pow(2).sum()/len(x)/(len(x) - 1)).pow(0.5)

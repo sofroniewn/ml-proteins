@@ -30,6 +30,9 @@ class PDBDataset(Dataset):
     def __getitem__(self, idx):
 
         df = read_csv(self.names[idx])
+        if len(df)>150:
+            df = df[:150]
+
         sequence = zeros((len(df)//3, 20))
         angles = zeros((len(df)//3, 12))
 

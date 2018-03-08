@@ -3,6 +3,7 @@ from torch.autograd import Variable
 import torch
 from numpy import minimum, stack
 from numpy.linalg import norm
+from scipy.spatial.distance import pdist
 from pandas import DataFrame, read_csv
 from glob import glob
 from torsions.model import reconstruct, criterion_rmsd, criterion_drmsd
@@ -174,13 +175,7 @@ def MAE(x, y):
     return sum(minimum(abs(y - x), 360 - abs(y - x))) / len(x)
 
 def dRMSD(x, y):
-    loss = 0
-    for i in range(len(x)-1):
-        for j in range(i+1, len(x)):
-            loss = loss + (norm(x[i]-x[j])-norm(y[i]-y[j]))**2
-    loss = 2*loss/(len(x))/(len(x)-1)
-    loss = loss**(1/2)
-    return loss
+    return norm(pdist(x) - pdist(y))/((len(x)*(len(x)-1)/2)**(0.5))
 
 def rmsd(outputs, labels):
-    return (norm(outputs - labels, axis=1)**(2)).mean()**(1/2)
+    return (3**(0.5))*((outputs - labels)**(2)).mean()**(0.5)
