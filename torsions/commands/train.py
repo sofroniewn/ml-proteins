@@ -59,8 +59,12 @@ def train_command(input, output, epochs, display, lr, resume, save_epoch, rmsd_l
     if resume is not 0:
         snapshot_name = 'model-%04d' % resume
         status('loading network %s' % snapshot_name)
-        net.load_state_dict(load(join(output, snapshot_name, 'model.pth')))
-        optimizer.load_state_dict(load(join(output, snapshot_name, 'opt.pth')))
+        if cuda.is_available():
+            net.load_state_dict(load(join(output, snapshot_name, 'model.pth')))
+            optimizer.load_state_dict(load(join(output, snapshot_name, 'opt.pth')))
+        else:
+            net.load_state_dict(load(join(output, snapshot_name, 'model.pth'), map_location=lambda storage, loc: storage))
+            optimizer.load_state_dict(load(join(output, snapshot_name, 'opt.pth'), map_location=lambda storage, loc: storage))
 
     status('starting training')
     for epoch in range(resume, resume+epochs):  # loop over the dataset multiple times
