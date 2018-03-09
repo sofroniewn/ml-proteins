@@ -49,7 +49,7 @@ def train(trainloader, net, criterion, optimizer, epoch, display, rmsd_loss, drm
             loss = criterion(outputs.data, labels.data)
 
         loss.backward()
-        clip_grad_norm(net.parameters(), 0.5)
+        clip_grad_norm(net.parameters(), 0.25)
 
         optimizer.step()
 

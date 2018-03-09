@@ -86,7 +86,7 @@ def pdist(x):
     dist = dist - diag(dist.diag())
     dist = clamp(dist, 0.0, inf)
     #dist = dist.pow(0.5)
-    #dist[(dist != dist).detach()] = 0
+    dist[(dist != dist).detach()] = 0
     return dist
 
 
