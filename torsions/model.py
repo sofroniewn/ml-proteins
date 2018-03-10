@@ -82,10 +82,5 @@ def pdist(x):
     dist = x_norm + y_norm - 2 * mm(x, y_t)
     dist = dist - diag(dist.diag())
     dist = clamp(dist, 0.0, inf)
-    #dist = dist.pow(0.5)
+    dist = dist.pow(0.5)
     return dist
-
-
-def criterion_drmsd(x, y):
-#        return ((pdist(x) - pdist(y)).pow(2).mean()*len(x)/(len(x)-1)).pow(0.5)
-    return (pdist(x) - pdist(y)).pow(2).mean()

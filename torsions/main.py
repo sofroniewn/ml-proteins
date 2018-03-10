@@ -6,7 +6,7 @@ from numpy.linalg import norm
 from scipy.spatial.distance import pdist
 from pandas import DataFrame, read_csv
 from glob import glob
-from torsions.model import reconstruct, criterion_drmsd
+from torsions.model import reconstruct, pdist
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils import clip_grad_norm
 
@@ -42,7 +42,7 @@ def train(trainloader, net, criterion, optimizer, epoch, display, rmsd_loss, drm
             loss_pos = 0
             for ij in range(trainloader.batch_size):
                 bond_angles, torsion_angles, pos = reconstruct(o[ij, :l_o[ij]], c[ij, :3])
-                loss_pos = loss_pos + criterion_drmsd(pos, c[ij, :l_c[ij]])
+                loss_pos = loss_pos + criterion(pdist(pos), pdist(c[ij, :l_c[ij]]))
             loss_pos = loss_pos / trainloader.batch_size
             loss = loss_pos
         else:
@@ -88,7 +88,7 @@ def validate(valloader, net, criterion, optimizer, epoch, save, output, rmsd_los
         if rmsd_loss:
             loss = criterion(pos, coords[0])
         elif drmsd_loss:
-            loss = criterion_drmsd(pos, coords[0])
+            loss = criterion(pdist(pos), pdist(coords[0]))
         else:
             loss = criterion(outputs, labels)
 
