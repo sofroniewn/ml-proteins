@@ -6,7 +6,7 @@ from numpy.linalg import norm
 from scipy.spatial.distance import pdist
 from pandas import DataFrame, read_csv
 from glob import glob
-from torsions.model import reconstruct, criterion_rmsd, criterion_drmsd
+from torsions.model import reconstruct, criterion_drmsd
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils import clip_grad_norm
 
