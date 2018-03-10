@@ -74,9 +74,6 @@ def reconstruct(ang, init):
         pos[ij] = position(pos[ij-3], pos[ij-2], pos[ij-1], R[(ij-1)%3], R[ij%3], (pi-bond_angles[ij-1]), torsion_angles[ij-1])
     return bond_angles*180/pi, torsion_angles*180/pi, pos
 
-def criterion_rmsd(outputs, labels):
-    return (3**(0.5))*(outputs - labels).pow(2).mean().pow(0.5)
-
 def pdist(x):
     x_norm = x.pow(2).sum(1).view(-1, 1)
     y_t = transpose(x, 0, 1)
@@ -86,7 +83,6 @@ def pdist(x):
     dist = dist - diag(dist.diag())
     dist = clamp(dist, 0.0, inf)
     #dist = dist.pow(0.5)
-    dist[(dist != dist).detach()] = 0
     return dist
 
 

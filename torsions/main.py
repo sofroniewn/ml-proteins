@@ -33,7 +33,7 @@ def train(trainloader, net, criterion, optimizer, epoch, display, rmsd_loss, drm
             loss_pos = 0
             for ij in range(trainloader.batch_size):
                 bond_angles, torsion_angles, pos = reconstruct(o[ij, :l_o[ij]], c[ij, :3])
-                loss_pos = loss_pos + criterion_rmsd(pos, c[ij, :l_c[ij]])
+                loss_pos = loss_pos + criterion(pos, c[ij, :l_c[ij]])
             loss_pos = loss_pos / trainloader.batch_size
             loss = loss_pos
         elif drmsd_loss:
@@ -86,7 +86,7 @@ def validate(valloader, net, criterion, optimizer, epoch, save, output, rmsd_los
         outputs = net(inputs)
         bond_angles, torsion_angles, pos = reconstruct(outputs[0], coords[0, :3])
         if rmsd_loss:
-            loss = criterion_rmsd(pos, coords[0])
+            loss = criterion(pos, coords[0])
         elif drmsd_loss:
             loss = criterion_drmsd(pos, coords[0])
         else:
